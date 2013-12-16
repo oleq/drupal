@@ -5,265 +5,200 @@
  * Integrates the Drupal Image plugin with the caption_filter filter if enabled.
  */
 
-(function (CKEDITOR) {
+(function( CKEDITOR ) {
+  'use strict';
 
-  "use strict";
+  CKEDITOR.plugins.add( 'drupalimagecaption', {
+    requires: 'widget,drupalimage,image2',
 
-  CKEDITOR.plugins.add('drupalimagecaption', {
-    requires: 'widget',
-    init: function (editor) {
+    beforeInit: function( editor ) {
+      // Override the image2 widget definition.
+      editor.on( 'widgetDefinition', function( evt ) {
+        var def = evt.data;
 
-      /**
-       * Override drupalimage plugin's image insertion mechanism with our own, to
-       * ensure a widget is inserted, rather than a simple image (Widget's auto-
-       * discovery only runs upon init).
-       */
-      editor.on('drupalimageinsert', function (event) {
-        editor.execCommand('widgetDrupalimagecaption');
-        event.cancel();
-      });
+        if ( def.name != 'image' )
+          return;
 
-      // Register the widget with a unique name "drupalimagecaption".
-      editor.widgets.add('drupalimagecaption', {
-        allowedContent: 'img[!src,alt,width,height,!data-caption,!data-align]',
-        template: '<img src="" />',
-        parts: {
-          image: 'img'
-        },
+        // Depending on a case, we have to downcast an image tag
+        // or full figure+img+figcaption.
+        def.downcast = function( element ) {
+            // Find an image element in the one being downcasted (it can be itself).
+          var img = findElementByName( element, 'img' ),
+            attrs = img.attributes;
 
-        // Initialization method called for every widget instance being
-        // upcasted.
-        init: function () {
-          var image = this.parts.image;
+          // If image contains a caption, serialize caption's data to the attribute.
+          if ( this.editables.caption )
+            attrs[ 'data-caption' ] = this.editables.caption.getData();
+          if ( this.data.align != 'none' )
+            attrs[ 'data-align'] = this.data.align;
+          attrs[ 'data-editor-file-uuid' ] = this.data[ 'data-editor-file-uuid' ];
 
-          // Save the initial widget data.
-          this.setData({
-            'data-editor-file-uuid': image.getAttribute('data-editor-file-uuid'),
-            src: image.getAttribute('src'),
-            width: image.getAttribute('width') || '',
-            height: image.getAttribute('height') || '',
-            alt: image.getAttribute('alt') || '',
-            data_caption: image.getAttribute('data-caption'),
-            data_align: image.getAttribute('data-align'),
-            hasCaption: image.hasAttribute('data-caption')
-          });
+          return img;
+        };
 
-          image.removeStyle('float');
-        },
-
-        // Called after initialization and on "data" changes.
-        data: function () {
-          if (this.data['data-editor-file-uuid'] !== null) {
-            this.parts.image.setAttribute('data-editor-file-uuid', this.data['data-editor-file-uuid']);
-            this.parts.image.setAttribute('data-cke-saved-data-editor-file-uuid', this.data['data-editor-file-uuid']);
-          }
-          this.parts.image.setAttribute('src', this.data.src);
-          this.parts.image.setAttribute('data-cke-saved-src', this.data.src);
-          this.parts.image.setAttribute('alt', this.data.alt);
-          this.parts.image.setAttribute('data-cke-saved-alt', this.data.alt);
-          this.parts.image.setAttribute('width', this.data.width);
-          this.parts.image.setAttribute('data-cke-saved-width', this.data.width);
-          this.parts.image.setAttribute('height', this.data.height);
-          this.parts.image.setAttribute('data-cke-saved-height', this.data.height);
-          if (this.data.hasCaption) {
-            this.parts.image.setAttribute('data-caption', this.data.data_caption);
-            this.parts.image.setAttribute('data-cke-saved-data-caption', this.data.data_caption);
-          }
-          else {
-            this.parts.image.removeAttributes(['data-caption', 'data-cke-saved-data-caption']);
-          }
-          if (this.data.data_align !== null) {
-            this.parts.image.setAttribute('data-align', this.data.data_align);
-            this.parts.image.setAttribute('data-cke-saved-data-align', this.data.data_align);
-          }
-          else {
-            this.parts.image.removeAttributes(['data-align', 'data-cke-saved-data-align']);
-          }
-
-          // Float the wrapper too.
-          if (this.data.data_align === null) {
-            this.wrapper.removeStyle('float');
-            this.wrapper.removeStyle('text-align');
-          }
-          else if (this.data.data_align === 'center') {
-            this.wrapper.setStyle('float', 'none');
-            this.wrapper.setStyle('text-align', 'center');
-          }
-          else {
-            this.wrapper.setStyle('float', this.data.data_align);
-            this.wrapper.removeStyle('text-align');
-          }
-        },
-
-        // Check the elements that need to be converted to widgets.
-        upcast: function (el) {
-          // Upcast all <img> elements that are alone inside a block element.
-          if (el.name === 'img') {
-            if (CKEDITOR.dtd.$block[el.parent.name] && el.parent.children.length === 1) {
-              return true;
-            }
-          }
-        },
-
-        // Convert the element back to its desired output representation.
-        downcast: function (el) {
-          if (this.data.hasCaption) {
-            el.attributes['data-caption'] = this.data.data_caption;
-          }
-
-          if (this.data.data_align) {
-            el.attributes['data-align'] = this.data.data_align;
-          }
-
-          if (!this.data.width) {
-            el.attributes['data-cke-saved-width'] = this.parts.image.$.naturalWidth;
-          }
-          if (!this.data.height) {
-            el.attributes['data-cke-saved-height'] = this.parts.image.$.naturalHeight;
-          }
-        },
-
-        _selectionWillCreateInlineImage: function () {
-          // Returns node or first of its ancestors
-          // which is a block or block limit.
-          function getBlockParent(node, root) {
-            var path = new CKEDITOR.dom.elementPath(node, root);
-            return path.block || path.blockLimit;
-          }
-
-          var range = editor.getSelection().getRanges()[ 0 ],
-            startEl = getBlockParent(range.startContainer, range.root),
-            endEl = getBlockParent(range.endContainer, range.root);
-
-          var insideStartEl = range.checkBoundaryOfElement(startEl, CKEDITOR.START);
-          var insideEndEl = range.checkBoundaryOfElement(endEl, CKEDITOR.END);
-
-          return !(insideStartEl && insideEndEl);
-        },
-
-        _insertSaveCallback: function (returnValues) {
-          // We can't create an image with an empty "src" attribute.
-          if (returnValues.attributes.src.length === 0) {
+        // We want to upcast <img> element to a DOM structure required
+        // by the image2 widget. Depending on a case it may be:
+        // * just an <img> tag (non-captioned, not-centered image),
+        // * <img> tag in a paragraph (non-captioned, centered image),
+        // * <figure> tag (captioned image).
+        def.upcast = function( element, data ) {
+          if ( element.name != 'img' )
             return;
+
+          var attrs = element.attributes,
+            caption = attrs[ 'data-caption' ],
+            align = attrs[ 'data-align' ],
+            retElement = element;
+
+          // We won't need those attributes during editing,
+          // because we're using widget.data to store them.
+          data[ 'data-editor-file-uuid' ] = attrs[ 'data-editor-file-uuid' ];
+          delete attrs[ 'data-caption' ];
+          delete attrs[ 'data-align' ];
+          delete attrs[ 'data-editor-file-uuid' ];
+
+          // Unwrap from <p> wrapper created by HTML parser for captioned image.
+          // Captioned image will be transformed to <figure>, so we don't want the <p> anymore.
+          if ( element.parent.name == 'p' && caption )
+            element.parent.replaceWith( element );
+
+          // If data-caption attribute was found create a full figure structure.
+          if ( caption ) {
+            var figure = retElement = new CKEDITOR.htmlParser.element( 'figure' );
+            caption = new CKEDITOR.htmlParser.fragment.fromHtml( caption, 'figcaption' );
+            element.replaceWith( figure );
+            figure.add( element );
+            figure.add( caption );
+            figure.attributes[ 'class' ] = 'caption';
           }
 
-          editor.fire('saveSnapshot');
-
-          // Build the HTML for the widget.
-          var html = '<img ';
-          for (var attr in returnValues.attributes) {
-            if (returnValues.attributes.hasOwnProperty(attr) && !attr.match(/^data_/)) {
-              html += attr + '="' + returnValues.attributes[attr] + '" ';
-              html += 'data-cke-saved-' + attr + '="' + returnValues.attributes[attr] + '" ';
+          if ( align == 'center' ) {
+            // If image does not have a caption, but it is centered, make sure
+            // that it's wrapped with <p> which will become a part of widget.
+            if ( !caption ) {
+              var p = retElement = new CKEDITOR.htmlParser.element( 'p' );
+              element.replaceWith( p );
+              p.add( element );
+              p.attributes.style = 'text-align:center';
             }
-          }
-          if (returnValues.hasCaption) {
-            html += 'data-caption="" ';
-            html += ' data-cke-saved-data-caption=""';
-          }
-          if (returnValues.attributes.data_align && returnValues.attributes.data_align !== 'none') {
-            html += 'data-align="' + returnValues.attributes.data_align + '" ';
-            html += ' data-cke-saved-data-align="' + returnValues.attributes.data_align + '"';
-          }
-          html += ' />';
-          var el = new CKEDITOR.dom.element.createFromHtml(html, editor.document);
-          editor.insertElement(editor.widgets.wrapElement(el, 'drupalimagecaption'));
+            // Notify image2's init method that the during upcasting we found
+            // a centered image.
+            data.align = 'center';
+          } else if ( align == 'right' || align == 'left' )
+            // Set the float style on <figure> or <img>.
+            retElement.attributes.style = 'float:' + align;
 
-          // Save snapshot for undo support.
-          editor.fire('saveSnapshot');
+          // Return the upcasted element (<img>, <figure> or <p>).
+          return retElement;
+        };
 
-          // Initialize and focus the widget.
-          var widget = editor.widgets.initOn(el, 'drupalimagecaption');
-          widget.focus();
-        },
-
-        insert: function () {
-          var override = {
-            imageDOMElement: null,
-            existingValues: { hasCaption: false, data_align: '' },
-            saveCallback: this._insertSaveCallback,
-            dialogTitle: editor.config.drupalImage_dialogTitleAdd
-          };
-          if (this._selectionWillCreateInlineImage()) {
-            override.existingValues.isInline = this._selectionWillCreateInlineImage();
-            delete override.saveCallback;
-          }
-          editor.execCommand('drupalimage', override);
-        },
-
-        edit: function () {
-          var that = this;
-          var saveCallback = function (returnValues) {
-            editor.fire('saveSnapshot');
-            // Set the updated widget data.
-            that.setData({
-              'data-editor-file-uuid': returnValues.attributes['data-editor-file-uuid'],
-              src: returnValues.attributes.src,
-              width: returnValues.attributes.width,
-              height: returnValues.attributes.height,
-              alt: returnValues.attributes.alt,
-              hasCaption: !!returnValues.hasCaption,
-              data_caption: returnValues.hasCaption ? that.data.data_caption : '',
-              data_align: returnValues.attributes.data_align === 'none' ? null : returnValues.attributes.data_align
-            });
-            // Save snapshot for undo support.
-            editor.fire('saveSnapshot');
-          };
-          var override = {
-            imageDOMElement: this.parts.image.$,
-            existingValues: this.data,
-            saveCallback: saveCallback,
-            dialogTitle: this.data.src === '' ? editor.config.drupalImage_dialogTitleAdd : editor.config.drupalImage_dialogTitleEdit
-          };
-          editor.execCommand('drupalimage', override);
-        }
-      });
+        // Override image2's ACF integration.
+        def.allowedContent = 'img[!src,alt,width,height,data-align,data-caption,data-editor-file-uuid]';
+        def.requiredContent = 'img[src]';
+      } );
     },
 
-    afterInit: function (editor) {
-      function setupAlignCommand(value) {
-        var command = editor.getCommand('justify' + value);
-        if (command) {
-          if (value in { right: 1, left: 1, center: 1 }) {
-            command.on('exec', function (event) {
-              var widget = getSelectedWidget(editor);
-              if (widget && widget.name === 'drupalimagecaption') {
-                widget.setData({ data_align: value });
-                event.cancel();
-              }
-            });
+    init: function( editor ) {
+      // Add a widget#edit listener to every instance of image2 widget
+      // in order to handle its editing with Drupal's dialog.
+      // This includes also a case just after the image was created
+      // and dialog should be opened for it for the first time.
+      editor.widgets.on( 'instanceCreated', function( evt ) {
+        var widget = evt.data,
+          firstEdit = true;
+
+        if ( widget.name != 'image' )
+            return;
+
+        widget.on( 'edit', function( evt ) {
+          // Cancel edit event to break image2's dialog binding
+          // (and also to prevent automatic insertion before opening dialog).
+          evt.cancel();
+
+          // Open drupalimage dialog.
+          editor.execCommand( 'editdrupalimage', {
+            imageDOMElement: widget.parts.image.$,
+            existingValues: widgetDataToDialogValues( widget.data ),
+            saveCallback: createDialogSaveCallback( editor, widget ),
+            dialogTitle: widget.data.src ? editor.config.drupalImage_dialogTitleEdit : editor.config.drupalImage_dialogTitleAdd
+          } );
+        } );
+      } );
+    },
+
+    // Use afterInit, because CKEditor does not guarantee that drupalimage's init
+    // method will be executed before this plugin's one.
+    afterInit: function( editor ) {
+      // Forward drupalimage command to image2, so for example
+      // drupalimage button will insert image2 widget.
+      editor.getCommand( 'drupalimage' ).on( 'exec', function( evt ) {
+        evt.cancel();
+        editor.execCommand( 'image' );
+      } );
           }
+  } );
 
-          command.on('refresh', function (event) {
-            var widget = getSelectedWidget(editor),
-              allowed = { left: 1, center: 1, right: 1 },
-              align;
+  function createDialogSaveCallback( editor, widget ) {
+    // Return cached callback.
+    if ( widget._.saveCallback )
+      return widget._.saveCallback;
 
-            if (widget) {
-              align = widget.data.data_align;
+    return widget._.saveCallback = function( returnValues ) {
+      editor.fire( 'saveSnapshot' );
 
-              this.setState(
-                (align === value) ? CKEDITOR.TRISTATE_ON : (value in allowed) ? CKEDITOR.TRISTATE_OFF : CKEDITOR.TRISTATE_DISABLED);
+      // Set the updated widget data.
+      // Note: on widget#setData this widget instance might be destroyed.
+      var attrs = returnValues.attributes,
+        // Pass true so DocumentFragment will also be returned.
+        container = widget.wrapper.getParent( true ),
+        firstEdit = !widget.ready;
 
-              event.cancel();
-            }
-          });
-        }
+      widget.setData( {
+        'data-editor-file-uuid': attrs[ 'data-editor-file-uuid' ],
+        src: attrs.src,
+        width: attrs.width,
+        height: attrs.height,
+        alt: attrs.alt,
+        align: attrs.data_align || 'none',
+        hasCaption: !!returnValues.hasCaption
+      } );
+
+      // It's first edit, just after widget instance creation, but before it was inserted into DOM.
+      // So we need to retrieve the widget wrapper from inside the DocumentFragment which
+      // we cached above and finalize other things (like ready event and flag).
+      if ( firstEdit )
+        editor.widgets.finalizeCreation( container );
+
+        // Save snapshot for undo support.
+        editor.fire( 'saveSnapshot' );
+      };
+  }
+
+  // Transforms widget's data object to the format used by the drupalimage dialog.
+  function widgetDataToDialogValues( data ) {
+    return CKEDITOR.tools.extend( {}, data, {
+      data_align: data.align
+    }, true );
+  }
+
+  // Finds an element by its name. Function will check
+  // first the passed element itself and then all its children in DFS order.
+  // @param {CKEDITOR.htmlParser.element} element
+  // @param {String} name
+  // @returns {CKEDITOR.htmlParser.element}
+  function findElementByName( element, name ) {
+    if ( element.name == name )
+      return element;
+
+    var found = null;
+
+    element.forEach( function( el ) {
+      if ( el.name == name ) {
+        found = el;
+        return false; // Stop here.
       }
+    }, CKEDITOR.NODE_ELEMENT );
 
-      function getSelectedWidget(editor) {
-        var widget = editor.widgets.focused;
-        if (widget && widget.name === 'drupalimagecaption') {
-          return widget;
-        }
-        return null;
-      }
-
-      // Customize the behavior of the alignment commands.
-      setupAlignCommand('left');
-      setupAlignCommand('right');
-      setupAlignCommand('center');
-    }
-  });
-
-})(CKEDITOR);
+    return found;
+  }
+})( CKEDITOR );
