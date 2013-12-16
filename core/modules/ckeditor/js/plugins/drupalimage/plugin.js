@@ -15,6 +15,15 @@
         requiredContent: 'img[alt,src,width,height]',
         modes: { wysiwyg: 1 },
         canUndo: true,
+      exec: function(editor, override) {
+        editor.execCommand('insertdrupalimage', override);
+      }
+    });
+
+    editor.addCommand('editdrupalimage', {
+      allowedContent: 'img[alt,!src,width,height]',
+      requiredContent: 'img[alt,src,width,height]',
+      modes: { wysiwyg : 1 },
         exec: function (editor, override) {
           var imageDOMElement = null;
           var existingValues = {};
@@ -79,13 +88,13 @@
 
             // If the 'drupalimage' command is being applied to a CKEditor widget,
             // then edit that Widget instead.
-            if (imageElement && imageElement.type === CKEDITOR.NODE_ELEMENT && imageElement.hasAttribute('data-widget-wrapper')) {
-              editor.widgets.focused.edit();
-              return;
-            }
+          //if (imageElement && imageElement.type === CKEDITOR.NODE_ELEMENT && imageElement.hasAttribute('data-widget-wrapper')) {
+          //  editor.widgets.focused.edit();
+          //  return;
+          //}
             // Otherwise, check if the 'drupalimage' command is being applied to
             // an existing image tag, and then open a dialog to edit it.
-            else if (isImage(imageElement) && imageElement.$) {
+          if (isImage(imageElement) && imageElement.$) {
               imageDOMElement = imageElement.$;
 
               // Width and height are populated by actual dimensions.
@@ -114,9 +123,9 @@
               dialogTitle = editor.config.drupalImage_dialogTitleAdd;
               // Allow other plugins to override the image insertion: they must
               // listen to this event and cancel the event to do so.
-              if (!editor.fire('drupalimageinsert')) {
-                return;
-              }
+            //if (!editor.fire('drupalimageinsert')) {
+            //  return;
+            //}
             }
           }
 
@@ -146,7 +155,7 @@
       editor.on('doubleclick', function (event) {
         var element = event.data.element;
         if (element.is('img') && !element.data('cke-realelement') && !element.isReadOnly()) {
-          editor.getCommand('drupalimage').exec();
+        editor.execCommand('drupalimage');
         }
       });
 
