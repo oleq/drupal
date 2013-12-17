@@ -108,7 +108,7 @@
           firstEdit = true;
 
         if ( widget.name != 'image' )
-            return;
+          return;
 
         widget.on( 'edit', function( evt ) {
           // Cancel edit event to break image2's dialog binding
@@ -135,7 +135,7 @@
         evt.cancel();
         editor.execCommand( 'image' );
       } );
-          }
+    }
   } );
 
   function createDialogSaveCallback( editor, widget ) {
@@ -151,7 +151,8 @@
       var attrs = returnValues.attributes,
         // Pass true so DocumentFragment will also be returned.
         container = widget.wrapper.getParent( true ),
-        firstEdit = !widget.ready;
+        firstEdit = !widget.ready,
+        image = widget.parts.image;
 
       widget.setData( {
         'data-editor-file-uuid': attrs[ 'data-editor-file-uuid' ],
@@ -163,15 +164,23 @@
         hasCaption: !!returnValues.hasCaption
       } );
 
+      // Retrieve the widget once again. It could've been destroyed
+      // when shifting state, so might deal with a new instance.
+      widget = editor.widgets.getByElement( image );
+
       // It's first edit, just after widget instance creation, but before it was inserted into DOM.
       // So we need to retrieve the widget wrapper from inside the DocumentFragment which
       // we cached above and finalize other things (like ready event and flag).
       if ( firstEdit )
         editor.widgets.finalizeCreation( container );
 
+      setTimeout( function() {
+        // (Re-)focus the widget.
+        widget.focus();
         // Save snapshot for undo support.
         editor.fire( 'saveSnapshot' );
-      };
+      } );
+    };
   }
 
   // Transforms widget's data object to the format used by the drupalimage dialog.
