@@ -147,7 +147,7 @@
         editor.ui.addButton('DrupalImage', {
           label: Drupal.t('Image'),
           command: 'drupalimage',
-          icon: this.path.replace(/plugin\.js.*/, 'image.png')
+        icon: this.path + '/image.png'
         });
       }
 
