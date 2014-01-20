@@ -57,7 +57,9 @@ class DrupalImageCaption extends PluginBase implements CKEditorPluginInterface, 
    * {@inheritdoc}
    */
   public function getConfig(Editor $editor) {
-    return array();
+    return array(
+      'image2_captionedClass' => 'caption'
+    );
   }
 
   /**
