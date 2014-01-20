@@ -8,10 +8,15 @@
 (function( CKEDITOR ) {
   'use strict';
 
+  var placeholderText = Drupal.t( 'Enter caption here' );
+
   CKEDITOR.plugins.add( 'drupalimagecaption', {
     requires: 'widget,drupalimage,image2',
 
     beforeInit: function( editor ) {
+      // Disable default placeholder text that comes with CKEditor.
+      editor.lang.image2.placeholder = '';
+
       // Override the image2 widget definition.
       editor.on( 'widgetDefinition', function( evt ) {
         var def = evt.data;
@@ -66,6 +71,12 @@
           if ( caption ) {
             var figure = retElement = new CKEDITOR.htmlParser.element( 'figure' );
             caption = new CKEDITOR.htmlParser.fragment.fromHtml( caption, 'figcaption' );
+
+            // Use Drupal's data-placeholder attribute to insert a CSS-based,
+            // translation-ready placeholder for empty captions. Note that it
+            // also got to be done for new instances (see createDialogSaveCallback).
+            caption.attributes[ 'data-placeholder' ] = placeholderText;
+
             element.replaceWith( figure );
             figure.add( element );
             figure.add( caption );
@@ -173,6 +184,12 @@
       // we cached above and finalize other things (like ready event and flag).
       if ( firstEdit )
         editor.widgets.finalizeCreation( container );
+
+      // By default, the template of captioned widget has no data-placeholder attribute.
+      // Make sure that it is set for new instances, as well as when upcasting existing elements
+      // (see def#upcast).
+      if ( returnValues.hasCaption )
+        widget.editables.caption.setAttribute( 'data-placeholder', placeholderText );
 
       setTimeout( function() {
         // (Re-)focus the widget.
