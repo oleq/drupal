@@ -25,7 +25,8 @@ var CKBUILDER_CONFIG = {
 		'contents.css',
 		'styles.js',
 		'samples',
-		'skins/moono/readme.md'
+		'skins/moono/readme.md',
+		'README.md'
 	],
 	plugins : {
 		'about' : 1,
@@ -66,6 +67,7 @@ var CKBUILDER_CONFIG = {
 		'tableresize' : 1,
 		'sharedspace' : 1,
 		'sourcedialog' : 1,
-		'widget' : 1
+		'widget' : 1,
+		'image2' : 1
 	}
 };
