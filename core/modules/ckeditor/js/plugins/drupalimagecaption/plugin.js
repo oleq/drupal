@@ -13,6 +13,13 @@
   CKEDITOR.plugins.add( 'drupalimagecaption', {
     requires: 'widget,drupalimage,image2',
 
+    onLoad: function() {
+      CKEDITOR.addCss(
+        'figure.caption > figcaption{' +
+          'display:block' +
+        '}' );
+    },
+
     beforeInit: function( editor ) {
       // Disable default placeholder text that comes with CKEditor.
       editor.lang.image2.placeholder = '';
