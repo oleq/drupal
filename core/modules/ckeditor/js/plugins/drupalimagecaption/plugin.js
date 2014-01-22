@@ -64,8 +64,21 @@
 
           // Unwrap from <p> wrapper created by HTML parser for captioned image.
           // Captioned image will be transformed to <figure>, so we don't want the <p> anymore.
-          if ( element.parent.name == 'p' && caption )
+          if ( element.parent.name == 'p' && caption ) {
+            var index = element.getIndex(),
+                splitBefore = index > 0,
+                splitAfter = index + 1 < element.parent.children.length;
+
+            if ( splitBefore )
+              element.parent.split( index );
+
+            index = element.getIndex();
+
+            if ( splitAfter )
+              element.parent.split( index + 1 );
+
             element.parent.replaceWith( element );
+          }
 
           // If data-caption attribute was found create a full figure structure.
           if ( caption ) {
