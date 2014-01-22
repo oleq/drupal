@@ -29,11 +29,13 @@
         def.downcast = function( element ) {
             // Find an image element in the one being downcasted (it can be itself).
           var img = findElementByName( element, 'img' ),
+            caption = this.editables.caption,
+            captionHtml = caption && caption.getData(),
             attrs = img.attributes;
 
-          // If image contains a caption, serialize caption's data to the attribute.
-          if ( this.editables.caption )
-            attrs[ 'data-caption' ] = this.editables.caption.getData();
+          // If image contains a non-empty caption, serialize caption's data to the attribute.
+          if ( captionHtml )
+            attrs[ 'data-caption' ] = captionHtml;
           if ( this.data.align != 'none' )
             attrs[ 'data-align'] = this.data.align;
           attrs[ 'data-editor-file-uuid' ] = this.data[ 'data-editor-file-uuid' ];
