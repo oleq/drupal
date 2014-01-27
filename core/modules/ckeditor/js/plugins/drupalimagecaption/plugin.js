@@ -128,6 +128,7 @@
         // Override image2's ACF integration.
         def.allowedContent = 'img[!src,alt,width,height,data-align,data-caption,data-editor-file-uuid]';
         def.requiredContent = 'img[src]';
+        def.editables.caption.allowedContent = 'br em strong sub sup u s; a[!href,target]';
       } );
     },
 
