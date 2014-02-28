@@ -58,7 +58,8 @@ class DrupalImageCaption extends PluginBase implements CKEditorPluginInterface, 
    */
   public function getConfig(Editor $editor) {
     return array(
-      'image2_captionedClass' => 'caption'
+      'image2_captionedClass' => 'caption',
+      'image2_alignClasses' => [ 'align-left', 'align-center', 'align-right' ]
     );
   }
 
