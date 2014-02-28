@@ -24,10 +24,17 @@
         if ( def.name != 'image' )
           return;
 
+        // Overwrite default features definitions to match drupalimagecaption
+        // data standard.
+        CKEDITOR.tools.extend( def.features, {
+          caption: 'img[data-caption]',
+          align: 'img[data-align]'
+        }, true );
+
         // Depending on a case, we have to downcast an image tag
         // or full figure+img+figcaption.
         def.downcast = function( element ) {
-            // Find an image element in the one being downcasted (it can be itself).
+          // Find an image element in the one being downcasted (it can be itself).
           var img = findElementByName( element, 'img' ),
             caption = this.editables.caption,
             captionHtml = caption && caption.getData(),
