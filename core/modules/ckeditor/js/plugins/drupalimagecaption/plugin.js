@@ -15,7 +15,7 @@
 
     beforeInit: function( editor ) {
       // Disable default placeholder text that comes with CKEditor.
-      editor.lang.image2.placeholder = '';
+      editor.lang.image2.captionPlaceholder = '';
 
       // Override the image2 widget definition.
       editor.on( 'widgetDefinition', function( evt ) {
