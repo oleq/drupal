@@ -17,6 +17,9 @@
       // Disable default placeholder text that comes with CKEditor.
       editor.lang.image2.captionPlaceholder = '';
 
+      // Cache classes used to set widget alignment.
+      var alignClasses = editor.config.image2_alignClasses;
+
       // Override the image2 widget definition.
       editor.on( 'widgetDefinition', function( evt ) {
         var def = evt.data;
@@ -112,14 +115,15 @@
               var p = retElement = new CKEDITOR.htmlParser.element( 'p' );
               element.replaceWith( p );
               p.add( element );
-              p.attributes.style = 'text-align:center';
+              // Apply the class for centered images.
+              p.addClass( alignClasses[ 1 ] );
             }
-            // Notify image2's init method that the during upcasting we found
-            // a centered image.
+            // Notify widget.init that a centered image has been found.
             data.align = 'center';
-          } else if ( align == 'right' || align == 'left' )
-            // Set the float style on <figure> or <img>.
-            retElement.attributes.style = 'float:' + align;
+          }
+          // Set the proper alignment class on <figure> or <img>.
+          else if ( align in { left: 1, right: 1 } )
+            retElement.addClass( alignClasses[ align == 'left' ? 0 : 2 ] );
 
           // Return the upcasted element (<img>, <figure> or <p>).
           return retElement;
