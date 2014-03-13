@@ -57,11 +57,17 @@
 }
 
 /**
- * Since .align-center is set on widget's wrapper in CKEditor,
- * the alignment of internals must be set separately.
+ * Since .align-center is set on non-captioned image's parent
+ * block in CKEditor, the image must be centered separately.
  */
-.align-center figure,
-.align-center img {
+p.align-center {
+  text-align: center;
+}
+/**
+ * Since .align-center is set on captioned widget's wrapper
+ * in CKEditor, the alignment of internals must be set separately.
+ */
+div.align-center > figure {
   margin-left: auto;
   margin-right: auto;
 }
