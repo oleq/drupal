@@ -108,22 +108,18 @@
             figure.attributes[ 'class' ] = 'caption';
           }
 
-          if ( align == 'center' ) {
-            // If image does not have a caption, but it is centered, make sure
-            // that it's wrapped with <p> which will become a part of widget.
-            if ( !caption ) {
+          // If image does not have a caption, but it is centered, make sure
+          // that it's wrapped with <p> which will become a part of widget.
+          if ( align == 'center' && !caption ) {
               var p = retElement = new CKEDITOR.htmlParser.element( 'p' );
               element.replaceWith( p );
               p.add( element );
               // Apply the class for centered images.
               p.addClass( alignClasses[ 1 ] );
-            }
-            // Notify widget.init that a centered image has been found.
-            data.align = 'center';
           }
-          // Set the proper alignment class on <figure> or <img>.
-          else if ( align in { left: 1, right: 1 } )
-            retElement.addClass( alignClasses[ align == 'left' ? 0 : 2 ] );
+
+          // Pass alignment to widget data. It it's aligned
+          data.align = align;
 
           // Return the upcasted element (<img>, <figure> or <p>).
           return retElement;
