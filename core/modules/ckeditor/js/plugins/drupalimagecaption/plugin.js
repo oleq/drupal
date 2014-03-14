@@ -178,6 +178,8 @@
       return widget._.saveCallback;
 
     return widget._.saveCallback = function( returnValues ) {
+      // Dialog may have blurred the widget. Re-focus it first.
+      widget.focus();
       editor.fire( 'saveSnapshot' );
 
       // Set the updated widget data.
