@@ -30,8 +30,12 @@
         // Overwrite default features definitions to match drupalimagecaption
         // data standard.
         CKEDITOR.tools.extend( def.features, {
-          caption: 'img[data-caption]',
-          align: 'img[data-align]'
+          caption: {
+            requiredContent: 'img[data-caption]'
+          },
+          align: {
+            requiredContent: 'img[data-align]'
+          }
         }, true );
 
         // Depending on a case, we have to downcast an image tag
