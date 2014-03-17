@@ -122,7 +122,7 @@
               p.addClass( alignClasses[ 1 ] );
           }
 
-          // Pass alignment to widget data. It it's aligned
+          // Pass alignment to widget data.
           data.align = align;
 
           // Return the upcasted element (<img>, <figure> or <p>).

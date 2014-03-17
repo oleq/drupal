@@ -86,15 +86,7 @@
             var selection = editor.getSelection();
             var imageElement = selection.getSelectedElement();
 
-            // If the 'drupalimage' command is being applied to a CKEditor widget,
-            // then edit that Widget instead.
-          //if (imageElement && imageElement.type === CKEDITOR.NODE_ELEMENT && imageElement.hasAttribute('data-widget-wrapper')) {
-          //  editor.widgets.focused.edit();
-          //  return;
-          //}
-            // Otherwise, check if the 'drupalimage' command is being applied to
-            // an existing image tag, and then open a dialog to edit it.
-          if (isImage(imageElement) && imageElement.$) {
+            if (isImage(imageElement) && imageElement.$) {
               imageDOMElement = imageElement.$;
 
               // Width and height are populated by actual dimensions.
@@ -119,14 +111,8 @@
               dialogTitle = editor.config.drupalImage_dialogTitleEdit;
             }
             // The 'drupalimage' command is being executed to add a new image.
-            else {
+            else
               dialogTitle = editor.config.drupalImage_dialogTitleAdd;
-              // Allow other plugins to override the image insertion: they must
-              // listen to this event and cancel the event to do so.
-            //if (!editor.fire('drupalimageinsert')) {
-            //  return;
-            //}
-            }
           }
 
           // Drupal.t() will not work inside CKEditor plugins because CKEditor
