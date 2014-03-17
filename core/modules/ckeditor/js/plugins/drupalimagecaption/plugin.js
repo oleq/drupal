@@ -182,8 +182,12 @@
       return widget._.saveCallback;
 
     return widget._.saveCallback = function( returnValues ) {
+      var firstEdit = !widget.ready;
+
       // Dialog may have blurred the widget. Re-focus it first.
-      widget.focus();
+      if ( !firstEdit )
+        widget.focus();
+
       editor.fire( 'saveSnapshot' );
 
       // Set the updated widget data.
@@ -191,7 +195,6 @@
       var attrs = returnValues.attributes,
         // Pass true so DocumentFragment will also be returned.
         container = widget.wrapper.getParent( true ),
-        firstEdit = !widget.ready,
         image = widget.parts.image;
 
       widget.setData( {
